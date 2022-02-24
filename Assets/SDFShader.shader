@@ -33,6 +33,10 @@ Shader "Unlit/SDFShader"
                 float2 screenPos : TEXCOORD1;
             };
 
+
+            StructuredBuffer<float2> points;
+            int nPoints;
+
             sampler2D _MainTex;
             float4 _MainTex_ST;
 
@@ -67,6 +71,13 @@ Shader "Unlit/SDFShader"
                 float d = sdSegment(pixelPos, float2(200,200), float2(500,440)) - 5;
                 float d2 = sqrt((pixelPos.x - 500) * (pixelPos.x - 500) + (pixelPos.y - 500) * (pixelPos.y - 500)) - 50;
                 d = smin(d,d2, 20);
+                
+                for(int i = 0; i < nPoints; i++) {
+                    float x = points[i].x;
+                    float y = points[i].y;
+                    float cd = sqrt((pixelPos.x - x) * (pixelPos.x - x) + (pixelPos.y - y) * (pixelPos.y - y)) - 5;
+                    d = smin(d, cd, 20);
+                }
                 col.rgb *= clamp(smoothstep(0, 1.8, 1 - d),0,1);
                 col.g = max(col.g, exp(-.005*abs(d)) * (smoothstep(0.5, 0.6, sin(d / 10))*0.3+0.3));
                 // apply fog
