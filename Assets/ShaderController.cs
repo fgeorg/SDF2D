@@ -11,6 +11,7 @@ public class ShaderController : MonoBehaviour {
         public int type;
         public Vector2 pointA;
         public Vector2 pointB;
+        public Vector3 color;
     }
     public void MarkDirty() {
         _shouldRegenerate = true;
@@ -50,15 +51,18 @@ public class ShaderController : MonoBehaviour {
             shapes[0].type = 0; // line
             shapes[0].pointA = new Vector2(0,30);
             shapes[0].pointB = new Vector2(600,200);
+            shapes[0].color = new Vector3(0.5f,1,1);
             
             shapes[1].type = 0; // line
             shapes[1].pointA = new Vector2(300,30);
             shapes[1].pointB = new Vector2(700,600);
+            shapes[1].color = new Vector3(1.0f,0.5f,1);
 
             
             shapes[2].type = 1; // box
             shapes[2].pointA = new Vector2(600,200);
             shapes[2].pointB = new Vector2(700,600);
+            shapes[2].color = new Vector3(1.0f,1.0f,0.5f);
             int stride = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Shape));
             shapesBuffer?.Dispose();
             shapesBuffer = new ComputeBuffer(shapes.Length, stride, ComputeBufferType.Default);

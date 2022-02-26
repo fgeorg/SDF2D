@@ -38,6 +38,7 @@ Shader "Unlit/SDFShader"
                 int type;
                 float2 pointA;
                 float2 pointB;
+                float3 color;
             };
 
 
@@ -111,15 +112,18 @@ Shader "Unlit/SDFShader"
                             d2 = sdSegment(pixelPos, shapes[i].pointA, shapes[i].pointB) - 5;
                             break;
                             case 1:
-                            d2 = sdBox(pixelPos, shapes[i].pointA, shapes[i].pointB);
+                            d2 = sdBox(pixelPos, shapes[i].pointA, shapes[i].pointB) - 5;
                             break;
                         }
-                        d = min(d,d2);
+                        if (d2 <= 0) {
+                            col.rgb = shapes[i].color;
+                        }
+                        d = smin(d,d2, 20);
                     }
                 }
 
                 col.rgb *= clamp(smoothstep(0, 1.8, 1 - d),0,1);
-                col.gb = max(col.g, exp(-.01*abs(d)) * (smoothstep(0.5, 0.6, sin(d / 10))*0.3+0.3));
+                col.g = max(col.g, exp(-.01*abs(d)) * (smoothstep(0.5, 0.6, sin(d / 10))*0.3+0.3));
                 // apply fog
                 UNITY_APPLY_FOG(i.fogCoord, col);
                 return col;
