@@ -1,16 +1,17 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [ExecuteInEditMode]
 public class ShaderController : MonoBehaviour {
-
+    [SerializeField] float _smoothness = 40;
     private static ComputeBuffer pointsBuffer;
     private static ComputeBuffer shapesBuffer;
     private bool _shouldRegenerate;
 
     struct Shape {
         public int type;
-        public Vector2 pointA;
-        public Vector2 pointB;
+        public Vector2 vecA;
+        public Vector2 vecB;
         public Vector3 color;
     }
     public void MarkDirty() {
@@ -23,6 +24,7 @@ public class ShaderController : MonoBehaviour {
 
     // Update is called once per frame
     protected void Update() {
+        _shouldRegenerate = true;
         Material material = GetComponent<Renderer>().sharedMaterial;
         if (_shouldRegenerate) {
             Regenerate();
@@ -33,44 +35,24 @@ public class ShaderController : MonoBehaviour {
         _shouldRegenerate = false;
 
         Material material = GetComponent<Renderer>().sharedMaterial;
-        Vector2[] points = new Vector2[100];
-        for (int i = 0; i < points.Length; i++) {
-            points[i] = new Vector2(i * 5, Mathf.Sin(i * 0.05f) * 200 + 200);
-        }
-        {
-            int stride = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Vector2));
-            pointsBuffer?.Dispose();
-            pointsBuffer = new ComputeBuffer(points.Length, stride, ComputeBufferType.Default);
-            pointsBuffer.SetData(points);
-            material.SetBuffer("points", pointsBuffer);
-            material.SetInt("nPoints", points.Length);
+        List<Shape> shapes = new List<Shape>();
+        foreach (Transform child in transform) {
+            var color = child.GetComponent<SpriteRenderer>()?.color ?? Color.white;
+            shapes.Add(new Shape {
+                type = 1, // box
+                vecA = child.position,
+                vecB = child.lossyScale,
+                color = new Vector3(color.r, color.g, color.b),
+            });
         }
 
-        {
-            Shape[] shapes = new Shape[3];
-            shapes[0].type = 0; // line
-            shapes[0].pointA = new Vector2(0,30);
-            shapes[0].pointB = new Vector2(600,200);
-            shapes[0].color = new Vector3(0.5f,1,1);
-            
-            shapes[1].type = 0; // line
-            shapes[1].pointA = new Vector2(300,30);
-            shapes[1].pointB = new Vector2(700,600);
-            shapes[1].color = new Vector3(1.0f,0.5f,1);
-
-            
-            shapes[2].type = 1; // box
-            shapes[2].pointA = new Vector2(600,200);
-            shapes[2].pointB = new Vector2(700,600);
-            shapes[2].color = new Vector3(1.0f,1.0f,0.5f);
-            int stride = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Shape));
-            shapesBuffer?.Dispose();
-            shapesBuffer = new ComputeBuffer(shapes.Length, stride, ComputeBufferType.Default);
-            shapesBuffer.SetData(shapes);
-            material.SetBuffer("shapes", shapesBuffer);
-            material.SetInt("nShapes", shapes.Length);
-        }
-        Debug.Log("regenerate");
+        int stride = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Shape));
+        shapesBuffer?.Dispose();
+        shapesBuffer = new ComputeBuffer(shapes.Count, stride, ComputeBufferType.Default);
+        shapesBuffer.SetData(shapes);
+        material.SetBuffer("shapes", shapesBuffer);
+        material.SetInt("nShapes", shapes.Count);
+        material.SetFloat("smoothness", _smoothness);
     }
 
     void OnDestroy() {
